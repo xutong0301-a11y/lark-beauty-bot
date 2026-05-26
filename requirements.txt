@@ -1,0 +1,3 @@
+requests
+google-generativeai
+duckduckgo-search>=5.0.0
