@@ -24,7 +24,7 @@ def search_news(query, max_results=5):
                 max_results=max_results
             )
             for r in ddgs_news_gen:
-                results.append(f"- 标题: {r['title']}\n  摘要: {r['body']}\n  来源: {r['source']}")
+                results.append(f"- 标题: {r['title']}\n  摘要: {r['body']}\n  来源链接: {r.get('url', '未知链接')}")
     except Exception as e:
         print(f"搜索 {query} 时出错: {e}")
         return f"无法获取 {query} 的相关资讯。"
@@ -36,10 +36,13 @@ def search_news(query, max_results=5):
 def gather_information():
     """收集美妆趋势和 TikTok Shop 政策信息"""
     queries = [
-        "TikTok Shop US seller rules policy update", # 美区政策更新
-        "TikTok US viral beauty makeup trends",      # TikTok 美国美妆趋势
-        "Instagram US beauty trends",                # Instagram 美妆趋势
-        "South Korea skincare new releases trends"   # 韩国护肤美妆新品与趋势
+        "TikTok Shop US Seller Center policy rules", # 官方政策
+        "viral beauty skincare trends TikTok USA",   # TikTok美区护肤美妆爆款
+        "new trending beauty ingredients",           # 新兴美妆热门成分
+        "K-beauty skincare innovations releases",    # 韩国护肤新品与技术
+        "global beauty market consumer trends",      # 全球美妆消费者洞察
+        "TikTok US overall viral trending topics",   # 泛TikTok美区整体热点（备用）
+        "cross-border e-commerce US policy news"     # 整体跨境电商政策新闻（备用）
     ]
     
     all_info = ""
@@ -58,23 +61,23 @@ def generate_report(raw_info):
     model = genai.GenerativeModel('gemini-flash-latest')
     
     prompt = f"""
-    你是一个资深的美区 TikTok Shop 美妆类目卖家运营助手。
-    你的任务是每天向团队播报全球美妆趋势、近期可蹭的热点，以及美区 TikTok Shop 的政策变动。
+    你是一位极度专业、客观的数据分析师和跨境电商操盘手。
+    你的任务是每天为美区 TikTok Shop 美妆卖家提炼全球资讯。
     
-    下面是我通过搜索引擎抓取到的关于"美区政策"、"美国TikTok/Ins美妆热点"和"韩国美妆护肤新品"的最新资讯：
+    下面是我通过爬虫抓取到的最新原始资讯，包含新闻的标题、摘要和来源链接：
     
     {raw_info}
     
-    请根据以上信息，写一份精美的【每日美区TikTok Shop与美妆热点速报】。
-    要求：
-    1. 语言必须是中文，并且口吻专业、有网感、有煽动性。
-    2. 分为三个核心板块：
-       - 📣 **TikTok Shop 美区政策与动态** (提取涉及规则、政策、发货、罚款等关键信息)
-       - 💅 **欧美圈美妆热点与趋势** (提取在 TikTok/Ins 上火爆的妆容、成分或新玩法，给出蹭热点的建议)
-       - 🇰🇷 **韩国及全球新兴风向标** (提及新品发布、韩国大热的新概念)
-    3. 如果某板块没有抓取到有价值的信息，请用简短的话语带过，不要编造。
-    4. 排版要美观，多用 emoji，重点加粗，适合在飞书/微信群内阅读。
-    5. 最后加一句打气的话，鼓励团队今天爆单。
+    请根据以上信息，写一份【美妆行业每日速报】。
+    
+    绝对遵守以下要求：
+    1. **极简客观**：绝对不要写任何“亲爱的战友们”、“搞钱斗志”、“冲鸭”等废话、口水话和彩虹屁。直接输出干货。
+    2. **标明出处**：在提到具体的趋势、数据、爆品或政策时，**必须在句子结尾的括号内附上对应的来源链接 (URL)**。
+    3. **降维打击/破圈思维**：如果今天抓取到的【美妆直接相关】资讯较少，请自动提炼抓取到的【泛 TikTok 热门话题】或【整体跨境电商政策/大新闻】作为补充，并用一两句话点拨一下跨境卖家可以如何蹭这个热点。
+    4. 分为三个核心板块：
+       - 📌 **美区政策与电商大盘** (重点写TikTok Shop规则，若无则写北美跨境电商政策大事)
+       - 💄 **欧美圈热点与破圈玩法** (重点写美妆爆款/流行妆容。若无，则写今日TikTok大盘热门话题及蹭热点建议)
+       - 🇰🇷 **产品研发与新兴风向** (重点列出韩国新技术、新概念、新成分或新品发布)
     """
     
     try:
