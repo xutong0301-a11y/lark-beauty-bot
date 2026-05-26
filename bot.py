@@ -54,8 +54,8 @@ def generate_report(raw_info):
     print("正在调用 Gemini AI 生成日报...")
     genai.configure(api_key=GEMINI_API_KEY)
     
-    # 推荐使用 gemini-1.5-flash-latest 或 gemini-1.5-pro
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    # 使用最新一代免费速度最快的基础模型
+    model = genai.GenerativeModel('gemini-flash-latest')
     
     prompt = f"""
     你是一个资深的美区 TikTok Shop 美妆类目卖家运营助手。
@@ -125,7 +125,10 @@ if __name__ == "__main__":
     # 2. AI 提炼
     report = generate_report(raw_news)
     print("\n--- 生成的报告预览 ---\n")
-    print(report)
+    try:
+        print(report)
+    except Exception:
+        print("报告含有无法在控制台显示的特殊字符，跳过打印...")
     print("\n----------------------\n")
     
     # 3. 发送飞书
