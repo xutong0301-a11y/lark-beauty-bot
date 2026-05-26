@@ -101,11 +101,26 @@ def send_to_lark(content):
         "Content-Type": "application/json"
     }
     
-    # 将 markdown 格式稍微调整以适应飞书的富文本/文本
+    # 使用飞书的 interactive card 格式来完美解析 Markdown
     payload = {
-        "msg_type": "text",
-        "content": {
-            "text": content
+        "msg_type": "interactive",
+        "card": {
+            "config": {
+                "wide_screen_mode": True
+            },
+            "header": {
+                "title": {
+                    "tag": "plain_text",
+                    "content": "✨ 美区TikTok Shop与美妆行业速报 ✨"
+                },
+                "template": "blue"
+            },
+            "elements": [
+                {
+                    "tag": "markdown",
+                    "content": content
+                }
+            ]
         }
     }
     
