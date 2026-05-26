@@ -54,8 +54,8 @@ def generate_report(raw_info):
     print("正在调用 Gemini AI 生成日报...")
     genai.configure(api_key=GEMINI_API_KEY)
     
-    # 推荐使用 gemini-pro 或较新的 gemini-1.5-flash
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # 推荐使用 gemini-1.5-flash-latest 或 gemini-1.5-pro
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
     
     prompt = f"""
     你是一个资深的美区 TikTok Shop 美妆类目卖家运营助手。
