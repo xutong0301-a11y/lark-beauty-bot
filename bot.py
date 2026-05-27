@@ -1,8 +1,9 @@
 import os
 import requests
 import json
+import urllib.parse
+import xml.etree.ElementTree as ET
 import datetime
-from duckduckgo_search import DDGS
 import google.generativeai as genai
 
 # 配置环境变量
@@ -16,7 +17,7 @@ PROMPT_TEMPLATE = """
 你是一位极度专业、客观的数据分析师和跨境电商操盘手。
 今天是 {today_date}，你的任务是每天为美区 TikTok Shop 美妆卖家提炼全球资讯。
 
-下面是我通过爬虫抓取到的最新原始资讯（每一条都包含标题、摘要、发布时间、真实的来源链接，部分包含图片链接）：
+下面是我通过爬虫抓取到的最新原始资讯（每一条都包含标题、发布时间和真实的来源链接）：
 
 {raw_info}
 
@@ -28,9 +29,8 @@ PROMPT_TEMPLATE = """
    - **绝对禁止**使用 `#` 或 `##` 等多级标题语法（飞书卡片不支持），如果需要小标题，请直接使用 `**【小标题】**`。
    - 列表项请使用 `-` 或 `1. 2. 3.`。
 2. **极简客观**：不要写“亲爱的战友们”、“冲鸭”等废话。直接输出干货。
-3. **标明真实出处、时间与图片（极其重要）**：
+3. **标明真实出处与时间（极其重要）**：
    - 在每一条资讯或趋势分析的末尾，**必须附上它的发布时间和原本的真实出处链接**，格式为：`[👉 时间：(原始资讯中的发布时间) | 来源阅读](原始资讯中的“来源链接”)`。
-   - 如果该条原始资讯中提供了图片链接，**必须同时附带**：`[🖼️ 查看相关图片](原始资讯中的“图片链接”)`。
 4. **反幻觉与兜底机制（绝对禁止捏造）**：
    - **你只能基于我上面提供的 `raw_info` 里的文本进行总结！**
    - 如果今天缺乏足够的美妆/政策相关资讯，你可以提取抓取到的“国际重要新闻”进行播报（请自建一个 `**【🌍 国际要闻与大环境视点】**` 的板块）。
@@ -44,38 +44,43 @@ PROMPT_TEMPLATE = """
 """
 
 def search_news(query, max_results=5):
-    """使用 DuckDuckGo 搜索特定主题的最新资讯"""
+    """使用稳定的 Google News RSS 搜索最新资讯，替代极易被拦截的 DuckDuckGo"""
     print(f"正在搜索: {query}...")
     results = []
     try:
-        with DDGS() as ddgs:
-            # timelimit="w" 获取最近一周的新闻，保证新闻时效性且数据不为空
-            ddgs_news_gen = ddgs.news(
-                keywords=query,
-                region="wt-wt",
-                safesearch="off",
-                timelimit="w",
-                max_results=max_results
-            )
-            for r in ddgs_news_gen:
-                url = r.get('url', '未知链接')
-                if 'msn.com' in url.lower():
-                    continue
-                title = r.get('title', '')
-                body = r.get('body', '')
-                image = r.get('image', '')
-                date = r.get('date', '')
+        # 使用 URL 编码 query，并限制为过去7天 (when:7d)
+        encoded_query = urllib.parse.quote(f"{query} when:7d")
+        rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
+        
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+        response = requests.get(rss_url, headers=headers, timeout=15)
+        
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            items = root.findall('.//item')
+            
+            for item in items[:max_results]:
+                title = item.find('title').text if item.find('title') is not None else ""
+                url = item.find('link').text if item.find('link') is not None else ""
+                pubDate = item.find('pubDate').text if item.find('pubDate') is not None else ""
                 
-                # 简单处理一下日期格式，截取前10位 (如 2024-05-27)
+                # Google News 的日期格式如: Mon, 27 May 2024 07:00:00 GMT
+                date = pubDate
                 if date:
-                    date = date[:10]
+                    parts = date.split(' ')
+                    if len(parts) >= 4:
+                        date = f"{parts[3]}-{parts[2]}-{parts[1]}"
                 else:
                     date = "未知时间"
                 
-                info = f"- 标题: {title}\n  发布时间: {date}\n  摘要: {body}\n  来源链接: {url}"
-                if image:
-                    info += f"\n  图片链接: {image}"
+                info = f"- 标题: {title}\n  发布时间: {date}\n  来源链接: {url}"
                 results.append(info)
+        else:
+            print(f"请求失败，状态码: {response.status_code}")
+            return f"无法获取 {query} 的相关资讯。"
+            
     except Exception as e:
         print(f"搜索 {query} 时出错: {e}")
         return f"无法获取 {query} 的相关资讯。"
