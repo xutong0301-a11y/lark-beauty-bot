@@ -48,8 +48,8 @@ def search_news(query, max_results=5):
     print(f"正在搜索: {query}...")
     results = []
     try:
-        # 使用 URL 编码 query，并限制为过去7天 (when:7d)
-        encoded_query = urllib.parse.quote(f"{query} when:7d")
+        # 使用 URL 编码 query，并限制为过去 1 天 (when:1d)，以确保每天都是不重复的最新新闻
+        encoded_query = urllib.parse.quote(f"{query} when:1d")
         rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=en-US&gl=US&ceid=US:en"
         
         headers = {
