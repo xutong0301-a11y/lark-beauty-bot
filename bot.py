@@ -9,25 +9,61 @@ import google.generativeai as genai
 LARK_WEBHOOK_URL = os.environ.get("LARK_WEBHOOK_URL")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# ==========================================
+# 【提示词配置区】你可以随意修改这里的 Prompt
+# ==========================================
+PROMPT_TEMPLATE = """
+你是一位极度专业、客观的数据分析师和跨境电商操盘手。
+今天是 {today_date}，你的任务是每天为美区 TikTok Shop 美妆卖家提炼全球资讯。
+
+下面是我通过爬虫抓取到的过去24小时内的最新原始资讯（包含标题、摘要、来源链接和图片链接）：
+
+{raw_info}
+
+请根据以上信息，写一份【美妆行业每日速报】。
+
+绝对遵守以下排版和内容要求：
+1. **飞书Markdown排版规范**：
+   - **允许**使用 `**加粗**` 语法来突出重点。
+   - **绝对禁止**使用 `#` 或 `##` 等多级标题语法（飞书卡片不支持），如果需要小标题，请直接使用 `**【小标题】**`。
+   - 列表项请使用 `-` 或 `1. 2. 3.`。
+2. **极简客观**：不要写“亲爱的战友们”、“冲鸭”等废话。直接输出干货。
+3. **标明出处与图片**：
+   - 提到具体的趋势或爆品时，在对应段落末尾附上出处链接：`[来源阅读]({url})`。
+   - 如果原文提供了图片链接，请务必在旁边加上图片预览链接：`[🖼️ 查看相关图片]({image})`。
+4. **降维打击/破圈思维**：如果今天的美妆相关资讯较少，请自动提炼泛 TikTok 热点或跨境电商新闻，并附上蹭热点建议。
+5. **分为三个核心板块（请用换行和分割线明确区分）**：
+   - 📌 **美区政策与电商大盘**
+   - 💄 **欧美圈热点与破圈玩法**
+   - 🇰🇷 **产品研发与新兴风向**
+"""
+
 def search_news(query, max_results=5):
     """使用 DuckDuckGo 搜索特定主题的最新资讯"""
     print(f"正在搜索: {query}...")
     results = []
     try:
         with DDGS() as ddgs:
-            # 搜索新闻，获取最近一个月的新闻
+            # timelimit="d" 限制只搜过去一天的内容，避免每天新闻重复
             ddgs_news_gen = ddgs.news(
                 keywords=query,
                 region="wt-wt",
                 safesearch="off",
-                timelimit="m",
+                timelimit="d",
                 max_results=max_results
             )
             for r in ddgs_news_gen:
                 url = r.get('url', '未知链接')
                 if 'msn.com' in url.lower():
                     continue
-                results.append(f"- 标题: {r['title']}\n  摘要: {r['body']}\n  来源链接: {url}")
+                title = r.get('title', '')
+                body = r.get('body', '')
+                image = r.get('image', '')
+                
+                info = f"- 标题: {title}\n  摘要: {body}\n  来源链接: {url}"
+                if image:
+                    info += f"\n  图片链接: {image}"
+                results.append(info)
     except Exception as e:
         print(f"搜索 {query} 时出错: {e}")
         return f"无法获取 {query} 的相关资讯。"
@@ -43,15 +79,13 @@ def gather_information():
         "viral beauty skincare trends TikTok USA",   # TikTok美区护肤美妆爆款
         "new trending beauty ingredients",           # 新兴美妆热门成分
         "K-beauty skincare innovations releases",    # 韩国护肤新品与技术
-        "global beauty market consumer trends",      # 全球美妆消费者洞察
-        "TikTok US overall viral trending topics",   # 泛TikTok美区整体热点（备用）
-        "cross-border e-commerce US policy news"     # 整体跨境电商政策新闻（备用）
+        "global beauty market consumer trends"       # 全球美妆消费者洞察
     ]
     
     all_info = ""
     for q in queries:
         all_info += f"=== 关于 '{q}' 的搜索结果 ===\n"
-        all_info += search_news(q, max_results=5) + "\n\n"
+        all_info += search_news(q, max_results=4) + "\n\n"
         
     return all_info
 
@@ -60,33 +94,10 @@ def generate_report(raw_info):
     print("正在调用 Gemini AI 生成日报...")
     genai.configure(api_key=GEMINI_API_KEY)
     
-    # 使用最新一代免费速度最快的基础模型
     model = genai.GenerativeModel('gemini-flash-latest')
     
-    prompt = f"""
-    你是一位极度专业、客观的数据分析师和跨境电商操盘手。
-    你的任务是每天为美区 TikTok Shop 美妆卖家提炼全球资讯。
-    
-    下面是我通过爬虫抓取到的最新原始资讯，包含新闻的标题、摘要和来源链接：
-    
-    {raw_info}
-    
-    请根据以上信息，写一份【美妆行业每日速报】。
-    
-    绝对遵守以下要求：
-    1. **极简客观**：绝对不要写任何“亲爱的战友们”、“搞钱斗志”、“冲鸭”等废话、口水话和彩虹屁。直接输出干货。
-    2. **专业纯文本排版**：发送到群聊，**绝对禁止使用任何 Markdown 语法符号**（严禁使用 `**` 加粗、`#` 标题）。
-       - 放弃使用大量 Emoji 作为排版依赖，保持专业商务感（通篇最多保留两三个最关键的Emoji）。
-       - 使用显眼的文本分割线（如 `======================` 或 `----------------------`）来严格区分三大核心板块。
-       - 各大板块的标题必须使用【】包裹，例如：【美区政策与电商大盘】。
-       - 列表项请使用全角圆点 `●` 或数字 `1. 2. 3.`，并在每个点之间严格增加空行，保证视觉上的清晰度与呼吸感。
-    3. **标明出处**：在提到具体的趋势、爆品或政策时，直接在对应段落的末尾另起一行，以纯文本形式写上：“来源：原始URL”。
-    4. **降维打击/破圈思维**：如果今天抓取到的【美妆直接相关】资讯较少，请自动提炼抓取到的【泛 TikTok 热门话题】或【整体跨境电商政策大新闻】作为补充，并用一两句话点拨跨境卖家可以如何蹭这个热点。
-    4. 分为三个核心板块：
-       - 📌 **美区政策与电商大盘** (重点写TikTok Shop规则，若无则写北美跨境电商政策大事)
-       - 💄 **欧美圈热点与破圈玩法** (重点写美妆爆款/流行妆容。若无，则写今日TikTok大盘热门话题及蹭热点建议)
-       - 🇰🇷 **产品研发与新兴风向** (重点列出韩国新技术、新概念、新成分或新品发布)
-    """
+    today_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    prompt = PROMPT_TEMPLATE.replace("{today_date}", today_date).replace("{raw_info}", raw_info)
     
     try:
         response = model.generate_content(prompt)
@@ -106,7 +117,6 @@ def send_to_lark(content):
         "Content-Type": "application/json"
     }
     
-    # 使用飞书的 interactive card 格式来完美解析 Markdown
     payload = {
         "msg_type": "interactive",
         "card": {
@@ -116,7 +126,7 @@ def send_to_lark(content):
             "header": {
                 "title": {
                     "tag": "plain_text",
-                    "content": "✨ 美区TikTok Shop与美妆行业速报 ✨"
+                    "content": f"✨ 美区TikTok Shop与美妆速报 ({datetime.datetime.now().strftime('%m-%d')}) ✨"
                 },
                 "template": "blue"
             },
@@ -145,11 +155,9 @@ if __name__ == "__main__":
         
     print(f"[{datetime.datetime.now()}] 开始执行每日资讯收集任务...")
     
-    # 1. 抓取资讯
     raw_news = gather_information()
-    
-    # 2. AI 提炼
     report = generate_report(raw_news)
+    
     print("\n--- 生成的报告预览 ---\n")
     try:
         print(report)
@@ -157,7 +165,5 @@ if __name__ == "__main__":
         print("报告含有无法在控制台显示的特殊字符，跳过打印...")
     print("\n----------------------\n")
     
-    # 3. 发送飞书
     send_to_lark(report)
-    
     print("任务执行完毕。")
