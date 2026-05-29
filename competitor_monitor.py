@@ -119,6 +119,9 @@ def generate_report(raw_info):
     prompt = PROMPT_TEMPLATE.replace("{raw_info}", raw_info)
     
     try:
+        import time
+        # 强行休眠 5 秒，错开高峰期，防止与其他的定时任务并发抢占免费额度
+        time.sleep(5) 
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
