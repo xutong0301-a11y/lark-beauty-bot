@@ -30,6 +30,6 @@ jobs:
 
     - name: Run Monitor
       env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
         LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
       run: python competitor_monitor.py
