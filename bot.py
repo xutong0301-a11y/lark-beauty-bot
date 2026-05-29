@@ -4,11 +4,11 @@ import json
 import urllib.parse
 import xml.etree.ElementTree as ET
 import datetime
-from anthropic import Anthropic
+import google.generativeai as genai
 
 # 配置环境变量
 LARK_WEBHOOK_URL = os.environ.get("LARK_WEBHOOK_URL")
-ANTHROPIC_AUTH_TOKEN = os.environ.get("ANTHROPIC_AUTH_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 # ==========================================
 # 【提示词配置区】你可以随意修改这里的 Prompt
@@ -108,27 +108,18 @@ def gather_information():
     return all_info
 
 def generate_report(raw_info):
-    """使用 AI 生成日报"""
-    print("正在调用 Claude 生成日报...")
+    """使用 Gemini AI 生成日报"""
+    print("正在调用 Gemini AI 生成日报...")
+    genai.configure(api_key=GEMINI_API_KEY)
     
-    client = Anthropic(
-        api_key=ANTHROPIC_AUTH_TOKEN,
-        base_url="https://sub.matrcode.com",
-        default_headers={"User-Agent": "claude-code/0.2.29"}
-    )
+    model = genai.GenerativeModel('gemini-flash-latest')
     
     today_date = datetime.datetime.now().strftime("%Y-%m-%d")
     prompt = PROMPT_TEMPLATE.replace("{today_date}", today_date).replace("{raw_info}", raw_info)
     
     try:
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=4096,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return response.content[0].text
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
         print(f"调用 AI 失败: {e}")
         return "AI 生成内容失败，请检查 API 密钥或网络限制。"
@@ -176,8 +167,8 @@ def send_to_lark(content):
         print(f"发送请求失败: {e}")
 
 if __name__ == "__main__":
-    if not ANTHROPIC_AUTH_TOKEN:
-        print("错误: 未配置 ANTHROPIC_AUTH_TOKEN 环境变量。")
+    if not GEMINI_API_KEY:
+        print("错误: 未配置 GEMINI_API_KEY 环境变量。")
         exit(1)
         
     print(f"[{datetime.datetime.now()}] 开始执行每日资讯收集任务...")
