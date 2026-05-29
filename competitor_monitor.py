@@ -6,6 +6,7 @@ import datetime
 from urllib.parse import urlparse
 import google.generativeai as genai
 from dateutil import parser
+import re  # 新增正则提取库
 
 # 配置环境变量
 LARK_WEBHOOK_URL = os.environ.get("LARK_WEBHOOK_URL")
@@ -80,7 +81,16 @@ def check_competitor_rss(domain, days=7):
                 if (now - published_time).days <= days:
                     title = entry.find('atom:title', ns).text
                     link = entry.find('atom:link', ns).attrib['href']
-                    new_products.append(f"- 【{brand_name}】 {title}\n  链接: {link}\n  上架时间: {published_time.strftime('%Y-%m-%d')}")
+                    
+                    # 提取图片 URL
+                    img_url = ""
+                    summary = entry.find('atom:summary', ns)
+                    if summary is not None and summary.text:
+                        img_match = re.search(r'src="([^"]+)"', summary.text)
+                        if img_match:
+                            img_url = f"\n  🖼️ ![产品图]({img_match.group(1)})"
+                    
+                    new_products.append(f"- **【{brand_name}】** {title}\n  🔗 [直达链接]({link}){img_url}\n  🕒 上架时间: {published_time.strftime('%Y-%m-%d')}")
     except Exception as e:
         print(f"巡检 {brand_name} 失败: {e}")
         
