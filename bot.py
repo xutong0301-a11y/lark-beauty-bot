@@ -4,11 +4,11 @@ import json
 import urllib.parse
 import xml.etree.ElementTree as ET
 import datetime
-import google.generativeai as genai
+from openai import OpenAI
 
 # 配置环境变量
 LARK_WEBHOOK_URL = os.environ.get("LARK_WEBHOOK_URL")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # ==========================================
 # 【提示词配置区】你可以随意修改这里的 Prompt
@@ -108,18 +108,25 @@ def gather_information():
     return all_info
 
 def generate_report(raw_info):
-    """使用 Gemini AI 生成日报"""
-    print("正在调用 Gemini AI 生成日报...")
-    genai.configure(api_key=GEMINI_API_KEY)
+    """使用 AI 生成日报"""
+    print("正在调用 GPT-5.5 生成日报...")
     
-    model = genai.GenerativeModel('gemini-flash-latest')
+    client = OpenAI(
+        api_key=OPENAI_API_KEY,
+        base_url="https://sub.matrcode.com/v1" 
+    )
     
     today_date = datetime.datetime.now().strftime("%Y-%m-%d")
     prompt = PROMPT_TEMPLATE.replace("{today_date}", today_date).replace("{raw_info}", raw_info)
     
     try:
-        response = model.generate_content(prompt)
-        return response.text
+        response = client.chat.completions.create(
+            model="gpt-5.5",
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        return response.choices[0].message.content
     except Exception as e:
         print(f"调用 AI 失败: {e}")
         return "AI 生成内容失败，请检查 API 密钥或网络限制。"
@@ -167,8 +174,8 @@ def send_to_lark(content):
         print(f"发送请求失败: {e}")
 
 if __name__ == "__main__":
-    if not GEMINI_API_KEY:
-        print("错误: 未配置 GEMINI_API_KEY 环境变量。")
+    if not OPENAI_API_KEY:
+        print("错误: 未配置 OPENAI_API_KEY 环境变量。")
         exit(1)
         
     print(f"[{datetime.datetime.now()}] 开始执行每日资讯收集任务...")
