@@ -2,7 +2,7 @@ name: Daily Lark Beauty Bot
 
 on:
   schedule:
-    - cron: '50 6 * * *'
+    - cron: '30 1 * * *'
   workflow_dispatch:
 
 jobs:
