@@ -16,21 +16,25 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 # 【竞品域名列表】
 # ==========================================
 COMPETITORS = [
-    "https://www.sheglam.com",
-    "https://www.rarebeauty.com",
     "https://fentybeauty.com",
-    "https://kyliecosmetics.com",
-    "https://www.glossier.com",
-    "https://www.tower28beauty.com",
-    "https://milkmakeup.com",
-    "https://summerfridays.com",
     "https://fwee.us",
     "https://kajabeauty.com",
-    "https://www.rhodeskin.com",
+    "https://kyliecosmetics.com",
+    "https://milkmakeup.com",
+    "https://sacheu.com",
+    "https://summerfridays.com",
+    "https://tartecosmetics.com",
     "https://us.laneige.com",
+    "https://wonderskin.com",
+    "https://www.charlottetilbury.com",
+    "https://www.glossier.com",
     "https://www.meritbeauty.com",
-    "https://www.westman-atelier.com",
-    "https://www.pixibeauty.com"
+    "https://www.pixibeauty.com",
+    "https://www.rarebeauty.com",
+    "https://www.rhodeskin.com",
+    "https://www.sheglam.com",
+    "https://www.tower28beauty.com",
+    "https://www.westman-atelier.com"
 ]
 
 PROMPT_TEMPLATE = """
