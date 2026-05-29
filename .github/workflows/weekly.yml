@@ -1,0 +1,35 @@
+name: Weekly Competitor Monitor
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # 10:00 AM Beijing Time every Monday (UTC 02:00)
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Download Code
+      run: |
+        wget https://raw.githubusercontent.com/xutong0301-a11y/lark-beauty-bot/main/competitor_monitor.py
+        wget https://raw.githubusercontent.com/xutong0301-a11y/lark-beauty-bot/main/requirements.txt
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Monitor
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
+      run: python competitor_monitor.py
