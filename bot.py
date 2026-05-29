@@ -113,7 +113,8 @@ def generate_report(raw_info):
     
     client = Anthropic(
         api_key=ANTHROPIC_AUTH_TOKEN,
-        base_url="https://sub.matrcode.com" 
+        base_url="https://sub.matrcode.com",
+        default_headers={"User-Agent": "claude-code/0.2.29"}
     )
     
     today_date = datetime.datetime.now().strftime("%Y-%m-%d")
