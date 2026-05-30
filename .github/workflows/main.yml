@@ -27,6 +27,6 @@ jobs:
 
     - name: Run Bot
       env:
-        ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         LARK_WEBHOOK_URL: ${{ secrets.LARK_WEBHOOK_URL }}
       run: python bot.py
