@@ -4,13 +4,13 @@ import json
 import xml.etree.ElementTree as ET
 import datetime
 from urllib.parse import urlparse
-import google.generativeai as genai
+from openai import OpenAI
 from dateutil import parser
 import re  # 新增正则提取库
 
 # 配置环境变量
 LARK_WEBHOOK_URL = os.environ.get("LARK_WEBHOOK_URL")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 
 # ==========================================
 # 【竞品域名列表】
@@ -113,17 +113,23 @@ def gather_new_products():
     return "\n\n".join(all_new)
 
 def generate_report(raw_info):
-    print("正在调用 Gemini AI 生成周报...")
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-flash-latest')
+    print("正在调用 DeepSeek AI 生成周报...")
+    client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url="https://api.deepseek.com")
     prompt = PROMPT_TEMPLATE.replace("{raw_info}", raw_info)
     
     try:
         import time
         # 强行休眠 5 秒，错开高峰期，防止与其他的定时任务并发抢占免费额度
         time.sleep(5) 
-        response = model.generate_content(prompt)
-        return response.text
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "你是一位极度专业的美妆行业竞品分析师。"},
+                {"role": "user", "content": prompt}
+            ],
+            stream=False
+        )
+        return response.choices[0].message.content
     except Exception as e:
         print(f"调用 AI 失败: {e}")
         return "AI 生成内容失败，请检查配置。"
@@ -161,8 +167,8 @@ def send_to_lark(content):
         print(f"发送请求失败: {e}")
 
 if __name__ == "__main__":
-    if not GEMINI_API_KEY:
-        print("错误: 未配置 GEMINI_API_KEY")
+    if not DEEPSEEK_API_KEY:
+        print("错误: 未配置 DEEPSEEK_API_KEY")
         exit(1)
         
     print(f"[{datetime.datetime.now()}] 开始执行每周竞品巡检任务...")

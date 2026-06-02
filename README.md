@@ -5,7 +5,7 @@
 ## 功能特性
 - **完全自动化部署**：基于 GitHub Actions 每天定时运行（免费），完全不需要购买服务器。
 - **免科学上网的数据采集**：在 GitHub 服务器上直接运行，可以毫无障碍地搜索外网信息。
-- **AI 智能摘要**：不用再费力读枯燥的英文新闻，AI 会自动帮你提炼成具有煽动性、专业性且带排版的中文日报。
+- **AI 智能摘要**：不用再费力读枯燥的英文新闻，DeepSeek 会自动帮你提炼成具有煽动性、专业性且带排版的中文日报。
 
 ## 部署教程
 
@@ -14,9 +14,9 @@
 1. **获取飞书群机器人 Webhook**：
    - 在你要推送的飞书群聊中，点击右上角设置 -> **群机器人** -> **添加机器人** -> 选择 **自定义机器人**。
    - 填写名字（比如“美妆潮流捕手”），添加完成后，复制页面上提供的 **Webhook 地址**。
-2. **获取 Gemini API Key**：
-   - 访问 [Google AI Studio](https://aistudio.google.com/)，登录你的谷歌账号。
-   - 点击左侧的 "Get API Key"，然后点击 "Create API Key"，复制生成的密钥。
+2. **获取 DeepSeek API Key**：
+   - 访问 [DeepSeek 开放平台](https://platform.deepseek.com/)，登录你的账号。
+   - 在左侧菜单栏点击 "API keys"，然后点击 "创建 API key"，复制生成的密钥。
 
 ### 第二步：将代码上传到 GitHub
 
@@ -34,7 +34,7 @@
 2. 点击上方的 **Settings** 选项卡。
 3. 在左侧菜单栏找到 **Secrets and variables** -> 点击 **Actions**。
 4. 点击绿色的 **New repository secret** 按钮，分别添加两个变量：
-   - Name: `GEMINI_API_KEY` , Secret 填入你的 Gemini 密钥。
+   - Name: `DEEPSEEK_API_KEY` , Secret 填入你的 DeepSeek 密钥。
    - Name: `LARK_WEBHOOK_URL` , Secret 填入你的飞书 Webhook 地址。
 
 ### 第四步：测试与日常运行
